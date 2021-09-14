@@ -1,4 +1,4 @@
-module ch1/chat
+module github.com/taitai9847/goblueprints/ch1/chat
 
 go 1.17
 
