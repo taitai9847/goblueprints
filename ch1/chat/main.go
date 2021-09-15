@@ -2,13 +2,14 @@ package main
 
 import (
 	"flag"
-	"goblueprints/ch1/trace"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
 	"text/template"
+
+	"github.com/taitai9847/goblueprints/ch1/trace"
 )
 
 type templateHandler struct {

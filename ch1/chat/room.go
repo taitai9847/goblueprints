@@ -1,11 +1,11 @@
 package main
 
 import (
-	"goblueprints/ch1/trace"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/taitai9847/goblueprints/ch1/trace"
 )
 
 type room struct {
