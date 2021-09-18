@@ -10,7 +10,6 @@ import (
 	"text/template"
 
 	"github.com/stretchr/gomniauth"
-	"github.com/stretchr/gomniauth/providers/google"
 	"github.com/stretchr/objx"
 	"github.com/taitai9847/goblueprints/ch1/trace"
 )
@@ -39,11 +38,11 @@ func main() {
 	var addr = flag.String("addr", ":8080", "The addr of the application.")
 	flag.Parse()
 
-	gomniauth.SetSecurityKey("uYSfFhQ2ZyPnzIPmJhnIEY7YLCzkgk3cLmBddanBLrvT2lvwUPqt0deDFpR3h9n6")
+	gomniauth.SetSecurityKey("")
 	gomniauth.WithProviders(
-		// github.New("", "", "http://localhost:8080/auth/callback/github"),
-		google.New("1016034543021-b0tekt7ndko3u4haoefskkkka6ciog40.apps.googleusercontent.com", "9no0yUxHHkxoUK-jk5RcYY_9", "http://localhost:8080/auth/callback/google"),
-		// facebook.New("", "", "http://localhost:8080/auth/callback/facebook"),
+	// github.New("", "", "http://localhost:8080/auth/callback/github"),
+
+	// facebook.New("", "", "http://localhost:8080/auth/callback/facebook"),
 	)
 
 	r := newRoom()
