@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -9,7 +10,9 @@ import (
 	"sync"
 	"text/template"
 
+	"github.com/joho/godotenv"
 	"github.com/stretchr/gomniauth"
+	"github.com/stretchr/gomniauth/providers/google"
 	"github.com/stretchr/objx"
 	"github.com/taitai9847/goblueprints/ch1/trace"
 )
@@ -35,14 +38,23 @@ func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		fmt.Printf("読み込み出来ませんでした: %v", err)
+	}
+	securityKey := os.Getenv("APP_SECURITY_KEY")
+	clientId := os.Getenv("CLIENT_ID")
+	clientSecret := os.Getenv("CLIENT_SECRET")
+
 	var addr = flag.String("addr", ":8080", "The addr of the application.")
 	flag.Parse()
 
-	gomniauth.SetSecurityKey("")
+	gomniauth.SetSecurityKey(securityKey)
 	gomniauth.WithProviders(
-	// github.New("", "", "http://localhost:8080/auth/callback/github"),
-
-	// facebook.New("", "", "http://localhost:8080/auth/callback/facebook"),
+		// github.New("", "", "http://localhost:8080/auth/callback/github"),
+		google.New(clientId, clientSecret, "http://localhost:8080/auth/callback/google"),
+		// facebook.New("", "", "http://localhost:8080/auth/callback/facebook"),
 	)
 
 	r := newRoom()
