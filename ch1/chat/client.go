@@ -18,20 +18,20 @@ type client struct {
 }
 
 func (c *client) read() {
+	defer c.socket.Close()
 	for {
 		var msg *message
-		if err := c.socket.ReadJSON(&msg); err == nil {
-			msg.When = time.Now()
-			msg.Name = c.userData["name"].(string)
-			if avatarURL, ok := c.userData["avatar_url"]; ok {
-				msg.AvatarURL = avatarURL.(string)
-			}
-			c.room.forward <- msg
-		} else {
-			break
+		err := c.socket.ReadJSON(&msg)
+		if err != nil {
+			return
 		}
+		msg.When = time.Now()
+		msg.Name = c.userData["name"].(string)
+		if avatarURL, ok := c.userData["avatar_url"]; ok {
+			msg.AvatarURL = avatarURL.(string)
+		}
+		c.room.forward <- msg
 	}
-	c.socket.Close()
 }
 
 func (c *client) write() {
