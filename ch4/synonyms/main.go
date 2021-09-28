@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	"github.com/taitai9847/goblueprints/ch4/thesaurus"
 )
 
 func main() {
