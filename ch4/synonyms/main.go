@@ -6,11 +6,20 @@ import (
 	"log"
 	"os"
 
+	"github.com/joho/godotenv"
+
 	"github.com/taitai9847/goblueprints/ch4/thesaurus"
 )
 
 func main() {
-	apiKey := os.Getenv("BHT_APIKEY")
+	// apiKey := os.Getenv("BHT_APIKEY")
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		fmt.Printf("読み込み出来ませんでした: %v", err)
+	}
+	apiKey := os.Getenv("API_KEY")
+	fmt.Println("apiKey: ", apiKey)
+
 	thesaurus := &thesaurus.BigHugh{APIKey: apiKey}
 	s := bufio.NewScanner(os.Stdin)
 	for s.Scan() {
