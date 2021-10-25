@@ -18,9 +18,10 @@
 # vendor/
 
 ##ch5 data
-/ch5/data
+/ch5/data/db
 # /ch5/*.dat
 *.dat
+*.log
 ### Go Patch ###
 /vendor/
 /Godeps/
