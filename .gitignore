@@ -17,6 +17,10 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
+##ch5 data
+/ch5/data
+# /ch5/*.dat
+*.dat
 ### Go Patch ###
 /vendor/
 /Godeps/

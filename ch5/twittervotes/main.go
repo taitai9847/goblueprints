@@ -18,7 +18,9 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/matryer/go-oauth/oauth"
 	"github.com/nsqio/go-nsq"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -31,18 +33,20 @@ type Config struct {
 	BearerToken    string
 }
 
-var (
-	conn net.Conn
-)
-
 type poll struct {
 	Options []string
 }
+
 type tweet struct {
 	Text string
 }
 
-var reader io.ReadCloser
+var (
+	authClient *oauth.Client
+	creds      *oauth.Credentials
+	conn       net.Conn
+	reader     io.ReadCloser
+)
 
 func closeConn() {
 	if conn != nil {
@@ -74,6 +78,7 @@ func main() {
 		fmt.Printf("読み込み出来ませんでした: %v", err)
 	}
 
+	// configに環境変数を入れる
 	config := &Config{
 		ConsumerKey:    os.Getenv("SP_TWITTER_KEY"),
 		ConsumerSecret: os.Getenv("SP_TWITTER_SECRET"),
@@ -97,14 +102,21 @@ func main() {
 		log.Fatal("Missing BearerToken")
 	}
 
-	// creds := &clientcredentials.Config{
-	// 	ClientID:     config.AccessToken,
-	// 	ClientSecret: config.AccessSecret,
-	// }
-
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			Dial: dial,
+		},
+	}
+
+	creds = &oauth.Credentials{
+		Token:  config.AccessToken,
+		Secret: config.AccessSecret,
+	}
+
+	authClient = &oauth.Client{
+		Credentials: oauth.Credentials{
+			Token:  config.ConsumerKey,
+			Secret: config.ConsumerSecret,
 		},
 	}
 	// twitterを止める用のチャンネルの作成
@@ -112,6 +124,7 @@ func main() {
 	// publisherを止める用のチャンネルの作成
 	publisherStopChan := make(chan struct{}, 1)
 	stop := false
+	//signalチャネルの作成
 	signalChan := make(chan os.Signal, 1)
 	go func() {
 		<-signalChan
@@ -119,6 +132,7 @@ func main() {
 		log.Println("Stopping...")
 		closeConn()
 	}()
+
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 	votes := make(chan string)
 	go func() {
@@ -143,15 +157,25 @@ func main() {
 			time.Sleep(2 * time.Second)
 
 			var opts []string
+
+			// 以下mongoとのconnection
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
+			// client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://127.0.0.1:27018/?compressors=disabled&gssapiServiceName=mongodb"))
+			client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27018"))
+			defer client.Disconnect(ctx)
+			// defer func() { _ = client.Disconnect(ctx) }()
 
-			//TODO: ApplyURIの部分
-			client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
+			// 接続の確認
 			if err != nil {
 				log.Fatal(err)
+			} else {
+				fmt.Println("Mongo Connected")
 			}
-			cur, err := client.Database("ballots").Collection("polls").Find(ctx, nil)
+
+			// bson.D{{}} で全件数取得
+			cur, err := client.Database("ballots").Collection("polls").Find(ctx, bson.D{{}})
+			// fmt.Println(cur) //nil
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -163,8 +187,6 @@ func main() {
 				opts = append(opts, p.Options...)
 			}
 			defer cur.Close(ctx)
-			// defer client.Disconnect(ctx)
-			defer func() { _ = client.Disconnect(ctx) }()
 
 			hashtags := make([]string, len(opts))
 			for i := range opts {
@@ -180,9 +202,7 @@ func main() {
 				log.Println("creating filter request failed:", err)
 			}
 
-			// req.Header.Set("Authorization", authClient.AuthorizationHeader(creds, "POST", u, form))
-			var bearer = "Bearer " + config.BearerToken
-			req.Header.Set("Authorization", bearer)
+			req.Header.Set("Authorization", authClient.AuthorizationHeader(creds, "POST", u, form))
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			req.Header.Set("Content-Length", strconv.Itoa(len(formEnc)))
 
