@@ -10,7 +10,6 @@ type Path struct {
 }
 
 // ex) /people/1
-
 func NewPath(p string) *Path {
 	var id string
 	p = strings.Trim(p, PathSeparator)   // people/1

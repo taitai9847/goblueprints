@@ -20,15 +20,11 @@ func main() {
 	)
 	flag.Parse()
 	log.Println("MongoDBに接続します", *mongoParse)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27018"))
-	defer client.Disconnect(ctx)
+	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI("mongodb://localhost:27018"))
+	defer client.Disconnect(context.Background())
 	if err != nil {
 		log.Fatalln("MongoDBへの接続に失敗しました:", err)
 	}
-
 	mux := http.NewServeMux()
 	mux.HandleFunc("/polls/", withCORS(withVars(withData(client,
 		withAPIKey(handlePolls)))))
@@ -54,12 +50,8 @@ func isValidAPIKey(key string) bool {
 
 func withData(d *mongo.Client, f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		defer d.Disconnect(ctx)
-
+		defer d.Disconnect(context.Background())
 		thisDb := d
-
 		SetVar(r, "db", thisDb.Database("ballots"))
 		f(w, r)
 	}

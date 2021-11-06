@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -39,11 +40,6 @@ func handlePolls(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlePollsGet(w http.ResponseWriter, r *http.Request) {
-	ctx, err := context.WithTimeout(context.Background(), 10*time.Second)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	db := GetVar(r, "db").(*mongo.Database)
 	c := db.Collection("polls")
 
@@ -54,16 +50,17 @@ func handlePollsGet(w http.ResponseWriter, r *http.Request) {
 
 	if p.HasID() {
 		objID, _ = primitive.ObjectIDFromHex(p.ID)
-		q, _ = c.Find(ctx, bson.M{"_id": objID})
+		q, _ = c.Find(context.Background(), bson.M{"_id": objID})
 	} else {
-		q, _ = c.Find(ctx, bson.D{{}})
+		q, _ = c.Find(context.Background(), bson.D{{}})
 	}
 
 	var result []*poll
-	if err := q.All(ctx, &result); err != nil {
+	if err := q.All(context.Background(), &result); err != nil {
 		respondErr(w, r, http.StatusInternalServerError, err)
 		return
 	}
+	fmt.Println(&result)
 }
 
 func handlePollsPost(w http.ResponseWriter, r *http.Request) {
